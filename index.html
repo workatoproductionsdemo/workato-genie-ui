@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workato Headless API Explorer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #22263a;
+      --border: #2e3350;
+      --accent: #4f6ef7;
+      --accent-dim: rgba(79,110,247,0.12);
+      --text: #e8eaf6;
+      --text-dim: #7b82a8;
+      --success: #3ecf8e;
+      --error: #f56565;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    header span {
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-left: auto;
+      font-family: var(--mono);
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 61px);
+    }
+
+    .sidebar {
+      width: 260px;
+      border-right: 1px solid var(--border);
+      padding: 24px 16px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sidebar-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0 8px;
+      margin-bottom: 4px;
+    }
+
+    .preset {
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      border: none;
+      background: none;
+      text-align: left;
+      width: 100%;
+    }
+
+    .preset:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .preset.active {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 28px 32px;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .config-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+
+    .field label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+    }
+
+    .field input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 9px 12px;
+      font-size: 13px;
+      font-family: var(--mono);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field input:focus {
+      border-color: var(--accent);
+    }
+
+    .query-area {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .query-area label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+    }
+
+    .query-wrap {
+      position: relative;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      font-size: 13px;
+      font-family: var(--mono);
+      color: var(--text);
+      outline: none;
+      resize: vertical;
+      min-height: 100px;
+      transition: border-color 0.15s;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .send-btn {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: var(--accent);
+      border: none;
+      border-radius: 5px;
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: white;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: opacity 0.15s;
+    }
+
+    .send-btn:hover { opacity: 0.85; }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .response-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .response-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .response-header label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+    }
+
+    .status-pill {
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 3px 8px;
+      border-radius: 20px;
+      display: none;
+    }
+
+    .status-pill.success {
+      background: rgba(62,207,142,0.12);
+      color: var(--success);
+      display: inline-block;
+    }
+
+    .status-pill.error {
+      background: rgba(245,101,101,0.12);
+      color: var(--error);
+      display: inline-block;
+    }
+
+    .status-pill.loading {
+      background: var(--accent-dim);
+      color: var(--accent);
+      display: inline-block;
+    }
+
+    .response-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--text-dim);
+      flex: 1;
+      min-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+    }
+
+    .response-box.has-content {
+      color: var(--text);
+    }
+
+    .chat-history {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chat-msg {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .chat-msg .role {
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .chat-msg.user .role { color: var(--accent); }
+    .chat-msg.assistant .role { color: var(--success); }
+
+    .chat-msg .content {
+      font-family: var(--sans);
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 4px 0;
+    }
+
+    .empty-state {
+      color: var(--text-dim);
+      font-size: 13px;
+      font-family: var(--sans);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">W</div>
+  <h1>Workato Headless API Explorer</h1>
+  <span>Genie Chat API</span>
+</header>
+
+<div class="container">
+  <aside class="sidebar">
+    <div class="sidebar-label">Preset Queries</div>
+    <button class="preset" onclick="setPreset(this, 'List all tables in my Snowflake database')">List all tables</button>
+    <button class="preset" onclick="setPreset(this, 'Show me the top 10 rows from the customers table')">Top 10 customers</button>
+    <button class="preset" onclick="setPreset(this, 'What columns does the orders table have?')">Describe orders table</button>
+    <button class="preset" onclick="setPreset(this, 'Count total records in each table')">Count records</button>
+    <button class="preset" onclick="setPreset(this, 'Show revenue by month for the last 6 months')">Revenue by month</button>
+  </aside>
+
+  <main class="main">
+    <div class="config-row">
+      <div class="field">
+        <label>Bearer Token</label>
+        <input type="password" id="token" placeholder="Paste your Workato token" />
+      </div>
+      <div class="field" style="max-width:200px">
+        <label>IDP User ID</label>
+        <input type="text" id="idpUser" value="rGyCWcVgsZeMhqLvRSCctq" />
+      </div>
+    </div>
+
+    <div class="query-area">
+      <label>Query</label>
+      <div class="query-wrap">
+        <textarea id="queryInput" placeholder="Ask something about your Snowflake data..."></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+
+    <div class="response-area">
+      <div class="response-header">
+        <label>Response</label>
+        <span class="status-pill" id="statusPill"></span>
+      </div>
+      <div class="response-box" id="responseBox">
+        <span class="empty-state">Response will appear here once you send a query.</span>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const GENIE_ID = "gin-AcPpNBnf-kgQnJ3-CD";
+  const API_BASE = "https://genie-api.workato.com/api/v1";
+  let conversationId = null;
+  let chatHistory = [];
+
+  function setPreset(btn, text) {
+    document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('queryInput').value = text;
+  }
+
+  function getHeaders() {
+    return {
+      "Authorization": `Bearer ${document.getElementById('token').value.trim()}`,
+      "X-IDP-User-ID": document.getElementById('idpUser').value.trim(),
+      "Content-Type": "application/json"
+    };
+  }
+
+  function setStatus(type, text) {
+    const pill = document.getElementById('statusPill');
+    pill.className = `status-pill ${type}`;
+    pill.textContent = text;
+  }
+
+  function renderChat() {
+    const box = document.getElementById('responseBox');
+    if (chatHistory.length === 0) {
+      box.innerHTML = '<span class="empty-state">Response will appear here once you send a query.</span>';
+      box.classList.remove('has-content');
+      return;
+    }
+    box.classList.add('has-content');
+    box.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-history';
+    chatHistory.forEach((msg, i) => {
+      const div = document.createElement('div');
+      div.className = `chat-msg ${msg.role}`;
+      div.innerHTML = `<span class="role">${msg.role}</span><div class="content">${msg.content}</div>`;
+      wrap.appendChild(div);
+      if (i < chatHistory.length - 1) {
+        const hr = document.createElement('hr');
+        hr.className = 'divider';
+        wrap.appendChild(hr);
+      }
+    });
+    box.appendChild(wrap);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function sendMessage() {
+    const query = document.getElementById('queryInput').value.trim();
+    const token = document.getElementById('token').value.trim();
+    if (!query) return;
+    if (!token) { setStatus('error', 'Token required'); return; }
+
+    const btn = document.getElementById('sendBtn');
+    btn.disabled = true;
+    setStatus('loading', 'Connecting...');
+
+    try {
+      if (!conversationId) {
+        setStatus('loading', 'Starting conversation...');
+        const res = await fetch(`${API_BASE}/genies/${GENIE_ID}/chat/conversations`, {
+          method: 'POST', headers: getHeaders()
+        });
+        const data = await res.json();
+        if (!data.conversation_id) throw new Error(data.error_message || 'Failed to start conversation');
+        conversationId = data.conversation_id;
+      }
+
+      chatHistory.push({ role: 'user', content: query });
+      document.getElementById('queryInput').value = '';
+      document.querySelectorAll('.preset').forEach(b => b.classList.remove('active'));
+      renderChat();
+      setStatus('loading', 'Waiting for response...');
+
+      const res = await fetch(`${API_BASE}/genies/${GENIE_ID}/chat/conversations/${conversationId}/messages`, {
+        method: 'POST', headers: getHeaders(),
+        body: JSON.stringify({ message: query, stream: false })
+      });
+
+      const data = await res.json();
+      if (data.error_message) throw new Error(data.error_message);
+
+      const reply = data.response || data.message || JSON.stringify(data, null, 2);
+      chatHistory.push({ role: 'assistant', content: reply });
+      renderChat();
+      setStatus('success', '200 OK');
+    } catch (err) {
+      setStatus('error', err.message);
+      chatHistory.push({ role: 'assistant', content: `Error: ${err.message}` });
+      renderChat();
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  document.getElementById('queryInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) sendMessage();
+  });
+</script>
+</body>
+</html>
